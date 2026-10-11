@@ -1,0 +1,7 @@
+MolecularWeight
+LogP
+TPSA
+HBD
+HBA
+RotatableBonds
+RingCount

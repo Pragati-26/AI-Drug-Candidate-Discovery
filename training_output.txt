@@ -1,0 +1,1476 @@
+
+--- CELL 30 ---
+def calculate_descriptors(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+
+    if mol is None:
+        return pd.Series({
+            "MolecularWeight": None,
+            "LogP": None,
+            "TPSA": None,
+            "HBD": None,
+            "HBA": None,
+            "RotatableBonds": None,
+            "RingCount": None
+        })
+
+    return pd.Series({
+        "MolecularWeight": Descriptors.MolWt(mol),
+        "LogP": Descriptors.MolLogP(mol),
+        "TPSA": Descriptors.TPSA(mol),
+        "HBD": Descriptors.NumHDonors(mol),
+        "HBA": Descriptors.NumHAcceptors(mol),
+        "RotatableBonds": Descriptors.NumRotatableBonds(mol),
+        "RingCount": Descriptors.RingCount(mol)
+    })
+
+--- CELL 33 ---
+numeric_columns = [
+    "label",
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+correlation_matrix = df_with_descriptors[numeric_columns].corr()
+
+plt.figure(figsize=(10, 7))
+
+sns.heatmap(
+    correlation_matrix,
+    annot=True,
+    fmt=".2f"
+)
+
+plt.title("Molecular Descriptor Correlation Matrix")
+
+plt.show()
+
+--- CELL 46 ---
+def calculate_descriptors(smiles):
+
+    mol = Chem.MolFromSmiles(smiles)
+
+    if mol is None:
+        return pd.Series({
+            "MolecularWeight": np.nan,
+            "LogP": np.nan,
+            "TPSA": np.nan,
+            "HBD": np.nan,
+            "HBA": np.nan,
+            "RotatableBonds": np.nan,
+            "RingCount": np.nan
+        })
+
+    return pd.Series({
+        "MolecularWeight": Descriptors.MolWt(mol),
+        "LogP": Descriptors.MolLogP(mol),
+        "TPSA": Descriptors.TPSA(mol),
+        "HBD": Descriptors.NumHDonors(mol),
+        "HBA": Descriptors.NumHAcceptors(mol),
+        "RotatableBonds": Descriptors.NumRotatableBonds(mol),
+        "RingCount": Descriptors.RingCount(mol)
+    })
+
+--- CELL 48 ---
+descriptor_columns = [
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+df[descriptor_columns].describe()
+
+--- CELL 53 ---
+clean_columns = [
+    "SMILES",
+    "canonical_smiles",
+    "logS",
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+df_clean = df[clean_columns].copy()
+
+clean_file = os.path.join(
+    PROCESSED_DATA_PATH,
+    "ESOL_clean.csv"
+)
+
+df_clean.to_csv(
+    clean_file,
+    index=False
+)
+
+print("Saved:", clean_file)
+print("Shape:", df_clean.shape)
+
+--- CELL 55 ---
+clean_columns = [
+    "SMILES",
+    "canonical_smiles",
+    "logS",
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+df_clean = df[clean_columns].copy()
+
+print("Final clean dataset shape:", df_clean.shape)
+display(df_clean.head())
+
+--- CELL 62 ---
+descriptor_columns = [
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+for column in descriptor_columns:
+
+    plt.figure(figsize=(9, 5))
+
+    sns.histplot(
+        df[column],
+        bins=30,
+        kde=True
+    )
+
+    plt.title(f"Distribution of {column}")
+    plt.xlabel(column)
+    plt.ylabel("Number of Molecules")
+
+    plt.tight_layout()
+
+    filename = f"distribution_{column}.png"
+
+    plt.savefig(
+        os.path.join(FIGURES_PATH, filename),
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.show()
+
+--- CELL 64 ---
+correlation_columns = [
+    "logS",
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+correlation_matrix = df[correlation_columns].corr()
+
+print(correlation_matrix)
+
+--- CELL 68 ---
+plt.figure(figsize=(9, 6))
+
+sns.scatterplot(
+    data=df,
+    x="MolecularWeight",
+    y="logS",
+    alpha=0.6
+)
+
+plt.title("Molecular Weight vs Aqueous Solubility")
+plt.xlabel("Molecular Weight")
+plt.ylabel("logS")
+
+plt.tight_layout()
+
+plt.savefig(
+    os.path.join(
+        FIGURES_PATH,
+        "04_MolecularWeight_vs_logS.png"
+    ),
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
+
+--- CELL 71 ---
+# insoluble molecules
+lowest_solubility = df.sort_values(
+    "logS"
+).head(10)
+
+display(
+    lowest_solubility[
+        [
+            "canonical_smiles",
+            "logS",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA"
+        ]
+    ]
+)
+
+--- CELL 72 ---
+# soluble molecules
+highest_solubility = df.sort_values(
+    "logS",
+    ascending=False
+).head(10)
+
+display(
+    highest_solubility[
+        [
+            "canonical_smiles",
+            "logS",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA"
+        ]
+    ]
+)
+
+--- CELL 74 ---
+# summary
+summary = pd.DataFrame({
+    "Feature": [
+        "Molecular Weight",
+        "LogP",
+        "TPSA",
+        "HBD",
+        "HBA",
+        "Rotatable Bonds",
+        "Ring Count",
+        "logS"
+    ],
+    "Mean": [
+        df["MolecularWeight"].mean(),
+        df["LogP"].mean(),
+        df["TPSA"].mean(),
+        df["HBD"].mean(),
+        df["HBA"].mean(),
+        df["RotatableBonds"].mean(),
+        df["RingCount"].mean(),
+        df["logS"].mean()
+    ],
+    "Median": [
+        df["MolecularWeight"].median(),
+        df["LogP"].median(),
+        df["TPSA"].median(),
+        df["HBD"].median(),
+        df["HBA"].median(),
+        df["RotatableBonds"].median(),
+        df["RingCount"].median(),
+        df["logS"].median()
+    ],
+    "Minimum": [
+        df["MolecularWeight"].min(),
+        df["LogP"].min(),
+        df["TPSA"].min(),
+        df["HBD"].min(),
+        df["HBA"].min(),
+        df["RotatableBonds"].min(),
+        df["RingCount"].min(),
+        df["logS"].min()
+    ],
+    "Maximum": [
+        df["MolecularWeight"].max(),
+        df["LogP"].max(),
+        df["TPSA"].max(),
+        df["HBD"].max(),
+        df["HBA"].max(),
+        df["RotatableBonds"].max(),
+        df["RingCount"].max(),
+        df["logS"].max()
+    ]
+})
+
+display(summary)
+
+--- CELL 79 ---
+descriptor_columns = [
+    "MolecularWeight",
+    "LogP",
+    "TPSA",
+    "HBD",
+    "HBA",
+    "RotatableBonds",
+    "RingCount"
+]
+
+X_descriptors = df_clean[descriptor_columns].copy()
+
+y = df_clean["logS"].copy()
+
+print("X shape:", X_descriptors.shape)
+print("y shape:", y.shape)
+
+--- CELL 88 ---
+#Scale the descriptors
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+X_desc_train_scaled = scaler.fit_transform(X_desc_train)
+X_desc_val_scaled = scaler.transform(X_desc_val)
+X_desc_test_scaled = scaler.transform(X_desc_test)
+
+--- CELL 93 ---
+import joblib
+
+scaler_path = os.path.join(
+    PROJECT_PATH,
+    "models",
+    "descriptor_scaler.pkl"
+)
+
+joblib.dump(
+    scaler,
+    scaler_path
+)
+
+print("Scaler saved to:")
+print(scaler_path)
+
+--- CELL 105 ---
+#Add XGBoost
+import xgboost as xgb
+print("XGBoost version:", xgb.__version__)
+
+--- CELL 106 ---
+#XGBoost model
+xgb_model = xgb.XGBRegressor(
+    n_estimators=300,
+    max_depth=4,
+    learning_rate=0.03,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    objective="reg:squarederror",
+    random_state=42,
+    n_jobs=-1
+)
+
+--- CELL 107 ---
+#Train XGBoost
+xgb_results, xgb_train_pred, xgb_val_pred, xgb_test_pred = evaluate_model(
+    xgb_model,
+    X_desc_train_scaled,
+    y_train_np,
+    X_desc_val_scaled,
+    y_val_np,
+    X_desc_test_scaled,
+    y_test_np
+)
+xgb_results
+
+--- CELL 108 ---
+results_df = pd.DataFrame(
+    [
+        linear_results,
+        rf_results,
+        xgb_results
+    ],
+    index=[
+        "Linear Regression",
+        "Random Forest",
+        "XGBoost"
+    ]
+)
+
+display(results_df)
+
+--- CELL 125 ---
+dl_results = {
+    "Test MAE": dl_mae,
+    "Test RMSE": dl_rmse,
+    "Test R²": dl_r2
+}
+
+final_comparison = pd.DataFrame(
+    [
+        xgb_results,
+        rf_results,
+        linear_results,
+        dl_results
+    ],
+    index=[
+        "XGBoost",
+        "Random Forest",
+        "Linear Regression",
+        "Deep Learning"
+    ]
+)
+
+display(
+    final_comparison[
+        [
+            "Test MAE",
+            "Test RMSE",
+            "Test R²"
+        ]
+    ].sort_values(
+        "Test RMSE"
+    )
+)
+
+--- CELL 136 ---
+improved_dl_results = {
+    "Test MAE": improved_dl_mae,
+    "Test RMSE": improved_dl_rmse,
+    "Test R²": improved_dl_r2
+}
+
+phase7_comparison = pd.DataFrame(
+    [
+        xgb_results,
+        rf_results,
+        linear_results,
+        dl_results,
+        improved_dl_results
+    ],
+    index=[
+        "XGBoost",
+        "Random Forest",
+        "Linear Regression",
+        "Deep Learning",
+        "Improved Deep Learning"
+    ]
+)
+
+display(
+    phase7_comparison[
+        [
+            "Test MAE",
+            "Test RMSE",
+            "Test R²"
+        ]
+    ].sort_values(
+        "Test RMSE"
+    )
+)
+
+--- CELL 137 ---
+import joblib
+
+xgb_model_path = os.path.join(
+    PROJECT_PATH,
+    "models",
+    "xgboost_solubility_model.pkl"
+)
+
+joblib.dump(
+    xgb_model,
+    xgb_model_path
+)
+
+print("XGBoost model saved to:")
+print(xgb_model_path)
+
+--- CELL 138 ---
+feature_names_path = os.path.join(
+    PROJECT_PATH,
+    "models",
+    "descriptor_feature_names.txt"
+)
+
+with open(feature_names_path, "w") as f:
+    for feature in descriptor_columns:
+        f.write(feature + "\n")
+
+print("Feature names saved to:")
+print(feature_names_path)
+
+--- CELL 140 ---
+print("XGBoost model:", type(xgb_model))
+print("Descriptor columns:")
+print(descriptor_columns)
+
+--- CELL 141 ---
+from rdkit import Chem
+from rdkit.Chem import Descriptors, Lipinski, Crippen
+import pandas as pd
+import numpy as np
+
+def calculate_descriptors(smiles):
+
+    mol = Chem.MolFromSmiles(smiles)
+
+    if mol is None:
+        return None
+
+    descriptors = {
+        "MolecularWeight": Descriptors.MolWt(mol),
+        "LogP": Crippen.MolLogP(mol),
+        "TPSA": Descriptors.TPSA(mol),
+        "HBD": Lipinski.NumHDonors(mol),
+        "HBA": Lipinski.NumHAcceptors(mol),
+        "RotatableBonds": Lipinski.NumRotatableBonds(mol),
+        "RingCount": Lipinski.RingCount(mol)
+    }
+
+    return descriptors
+
+--- CELL 160 ---
+#Create the Gibbs sampling chain
+def run_gibbs_chain(
+    starting_smiles,
+    n_iterations=100,
+    temperature=1.0,
+    random_seed=42
+):
+
+    np.random.seed(random_seed)
+
+    current_smiles = starting_smiles
+
+    chain_records = []
+
+    for iteration in range(n_iterations):
+
+        # Generate and evaluate neighbors
+        neighbors_df = evaluate_neighbors(
+            current_smiles
+        )
+
+        if neighbors_df.empty:
+
+            print(
+                f"No valid neighbors at iteration {iteration}"
+            )
+
+            break
+
+        # Calculate conditional probabilities
+        probabilities = gibbs_probabilities(
+            neighbors_df["Candidate_Score"].values,
+            temperature=temperature
+        )
+
+        # Sample next state
+        selected_index = np.random.choice(
+            len(neighbors_df),
+            p=probabilities
+        )
+
+        selected_row = neighbors_df.iloc[
+            selected_index
+        ]
+
+        next_smiles = selected_row["SMILES"]
+
+        # Record current transition
+        chain_records.append({
+
+            "Iteration": iteration + 1,
+
+            "SMILES": next_smiles,
+
+            "Predicted_logS":
+                selected_row["Predicted_logS"],
+
+            "Candidate_Score":
+                selected_row["Candidate_Score"],
+
+            "Lipinski_Violations":
+                selected_row["Lipinski_Violations"],
+
+            "MolecularWeight":
+                selected_row["MolecularWeight"],
+
+            "LogP":
+                selected_row["LogP"],
+
+            "TPSA":
+                selected_row["TPSA"],
+
+            "HBD":
+                selected_row["HBD"],
+
+            "HBA":
+                selected_row["HBA"],
+
+            "RotatableBonds":
+                selected_row["RotatableBonds"],
+
+            "RingCount":
+                selected_row["RingCount"]
+
+        })
+
+        # Move to next molecular state
+        current_smiles = next_smiles
+
+    return pd.DataFrame(chain_records)
+
+--- CELL 163 ---
+top_candidates = chain_df.sort_values(
+    "Candidate_Score",
+    ascending=False
+).drop_duplicates(
+    subset=["SMILES"]
+).head(10)
+
+display(
+    top_candidates[
+        [
+            "SMILES",
+            "Predicted_logS",
+            "Candidate_Score",
+            "Lipinski_Violations",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA",
+            "RotatableBonds",
+            "RingCount"
+        ]
+    ]
+)
+
+--- CELL 168 ---
+# Phase 8C: Rank sampled molecular candidates
+
+top_candidates = (
+    chain_df
+    .sort_values(
+        "Candidate_Score",
+        ascending=False
+    )
+    .drop_duplicates(
+        subset=["SMILES"]
+    )
+    .head(10)
+)
+
+display(
+    top_candidates[
+        [
+            "SMILES",
+            "Predicted_logS",
+            "Candidate_Score",
+            "Lipinski_Violations",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA",
+            "RotatableBonds",
+            "RingCount"
+        ]
+    ]
+)
+
+--- CELL 169 ---
+# Phase 8C: Candidate diversity analysis
+
+candidate_analysis = chain_df.drop_duplicates(
+    subset=["SMILES"]
+).copy()
+
+print("Unique candidate molecules:", len(candidate_analysis))
+
+print("\nPredicted logS range:")
+print(
+    candidate_analysis["Predicted_logS"].min(),
+    "to",
+    candidate_analysis["Predicted_logS"].max()
+)
+
+print("\nCandidate Score range:")
+print(
+    candidate_analysis["Candidate_Score"].min(),
+    "to",
+    candidate_analysis["Candidate_Score"].max()
+)
+
+print("\nLipinski violations:")
+print(
+    candidate_analysis["Lipinski_Violations"]
+    .value_counts()
+    .sort_index()
+)
+
+print("\nMolecular Weight range:")
+print(
+    candidate_analysis["MolecularWeight"].min(),
+    "to",
+    candidate_analysis["MolecularWeight"].max()
+)
+
+print("\nLogP range:")
+print(
+    candidate_analysis["LogP"].min(),
+    "to",
+    candidate_analysis["LogP"].max()
+)
+
+--- CELL 170 ---
+# Phase 8C: Inspect candidates with highest predicted solubility
+
+best_logS_candidates = (
+    candidate_analysis
+    .sort_values(
+        "Predicted_logS",
+        ascending=False
+    )
+    .drop_duplicates(
+        subset=["SMILES"]
+    )
+    .head(15)
+)
+
+display(
+    best_logS_candidates[
+        [
+            "SMILES",
+            "Predicted_logS",
+            "Candidate_Score",
+            "Lipinski_Violations",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA",
+            "RotatableBonds",
+            "RingCount"
+        ]
+    ]
+)
+
+--- CELL 171 ---
+# Phase 8C: Lipinski-based candidate filtering
+
+filtered_candidates = candidate_analysis[
+    (candidate_analysis["MolecularWeight"] <= 500) &
+    (candidate_analysis["LogP"] <= 5) &
+    (candidate_analysis["HBD"] <= 5) &
+    (candidate_analysis["HBA"] <= 10)
+].copy()
+
+print("Candidates before filtering:", len(candidate_analysis))
+print("Candidates after Lipinski filtering:", len(filtered_candidates))
+
+if len(filtered_candidates) > 0:
+    print("\nBest predicted logS after filtering:")
+    print(filtered_candidates["Predicted_logS"].max())
+
+    display(
+        filtered_candidates
+        .sort_values("Predicted_logS", ascending=False)
+        .head(10)[
+            [
+                "SMILES",
+                "Predicted_logS",
+                "Candidate_Score",
+                "Lipinski_Violations",
+                "MolecularWeight",
+                "LogP",
+                "TPSA",
+                "HBD",
+                "HBA",
+                "RotatableBonds",
+                "RingCount"
+            ]
+        ]
+    )
+else:
+    print("\nNo candidates passed all Lipinski filters.")
+
+--- CELL 172 ---
+# Phase 8C: Calculate detailed drug-likeness penalty
+
+ranking_df = candidate_analysis.copy()
+
+# Individual penalties
+ranking_df["HBD_Excess"] = np.maximum(
+    ranking_df["HBD"] - 5, 0
+)
+
+ranking_df["HBA_Excess"] = np.maximum(
+    ranking_df["HBA"] - 10, 0
+)
+
+ranking_df["MW_Excess"] = np.maximum(
+    ranking_df["MolecularWeight"] - 500, 0
+)
+
+ranking_df["LogP_Excess"] = np.maximum(
+    ranking_df["LogP"] - 5, 0
+)
+
+# Total excess beyond Lipinski thresholds
+ranking_df["Total_Excess"] = (
+    ranking_df["HBD_Excess"] +
+    ranking_df["HBA_Excess"] +
+    ranking_df["MW_Excess"] +
+    ranking_df["LogP_Excess"]
+)
+
+display(
+    ranking_df[
+        [
+            "SMILES",
+            "Predicted_logS",
+            "HBD",
+            "HBA",
+            "MolecularWeight",
+            "LogP",
+            "HBD_Excess",
+            "HBA_Excess",
+            "Total_Excess"
+        ]
+    ]
+    .sort_values(
+        ["Total_Excess", "Predicted_logS"],
+        ascending=[True, False]
+    )
+    .head(10)
+)
+
+--- CELL 173 ---
+# Phase 8C: Final candidate ranking
+
+ranking_df = ranking_df.copy()
+
+# Normalize predicted solubility
+logS_min = ranking_df["Predicted_logS"].min()
+logS_max = ranking_df["Predicted_logS"].max()
+
+ranking_df["Solubility_Score"] = (
+    (ranking_df["Predicted_logS"] - logS_min)
+    / (logS_max - logS_min)
+)
+
+# Normalize drug-likeness
+excess_min = ranking_df["Total_Excess"].min()
+excess_max = ranking_df["Total_Excess"].max()
+
+if excess_max == excess_min:
+    ranking_df["Druglikeness_Score"] = 1.0
+else:
+    ranking_df["Druglikeness_Score"] = (
+        1 -
+        (
+            (ranking_df["Total_Excess"] - excess_min)
+            / (excess_max - excess_min)
+        )
+    )
+
+# Combined score
+ranking_df["Final_Ranking_Score"] = (
+    0.60 * ranking_df["Solubility_Score"]
+    + 0.40 * ranking_df["Druglikeness_Score"]
+)
+
+# Final ranking
+final_candidates = (
+    ranking_df
+    .sort_values(
+        "Final_Ranking_Score",
+        ascending=False
+    )
+    .drop_duplicates("SMILES")
+    .head(10)
+    .copy()
+)
+
+final_candidates.insert(
+    0,
+    "Rank",
+    range(1, len(final_candidates) + 1)
+)
+
+display(
+    final_candidates[
+        [
+            "Rank",
+            "SMILES",
+            "Predicted_logS",
+            "Total_Excess",
+            "Solubility_Score",
+            "Druglikeness_Score",
+            "Final_Ranking_Score",
+            "MolecularWeight",
+            "LogP",
+            "TPSA",
+            "HBD",
+            "HBA",
+            "RotatableBonds",
+            "RingCount"
+        ]
+    ]
+)
+
+--- CELL 180 ---
+# ============================================================
+# PHASE 9A: FINAL PROJECT RESULTS
+# Save all important Phase 8 outputs
+# ============================================================
+
+import os
+import pandas as pd
+
+# Create final results folders
+final_results_path = os.path.join(
+    PROJECT_PATH,
+    "results",
+    "candidates"
+)
+
+metrics_path = os.path.join(
+    PROJECT_PATH,
+    "results",
+    "metrics"
+)
+
+figures_path = os.path.join(
+    PROJECT_PATH,
+    "results",
+    "figures"
+)
+
+os.makedirs(final_results_path, exist_ok=True)
+os.makedirs(metrics_path, exist_ok=True)
+os.makedirs(figures_path, exist_ok=True)
+
+
+# ------------------------------------------------------------
+# 1. Save complete Gibbs-style sampling chain
+# ------------------------------------------------------------
+
+chain_path = os.path.join(
+    final_results_path,
+    "gibbs_sampling_chain.csv"
+)
+
+chain_df.to_csv(
+    chain_path,
+    index=False
+)
+
+
+# ------------------------------------------------------------
+# 2. Save final Top-10 candidates
+# ------------------------------------------------------------
+
+top10_path = os.path.join(
+    final_results_path,
+    "top_10_candidates.csv"
+)
+
+final_candidates.to_csv(
+    top10_path,
+    index=False
+)
+
+
+# ------------------------------------------------------------
+# 3. Save candidate analysis
+# ------------------------------------------------------------
+
+analysis_path = os.path.join(
+    final_results_path,
+    "candidate_analysis.csv"
+)
+
+ranking_df.to_csv(
+    analysis_path,
+    index=False
+)
+
+
+# ------------------------------------------------------------
+# 4. Save project summary metrics
+# ------------------------------------------------------------
+
+project_summary = pd.DataFrame({
+    "Metric": [
+        "Dataset molecules after cleaning",
+        "Molecular fingerprint size",
+        "Training samples",
+        "Validation samples",
+        "Test samples",
+        "Best model",
+        "XGBoost Test MAE",
+        "XGBoost Test RMSE",
+        "XGBoost Test R2",
+        "Gibbs-style sampling iterations",
+        "Unique sampled molecules",
+        "Unique molecule percentage",
+        "Lipinski-compliant sampled molecules"
+    ],
+
+    "Value": [
+        len(df_clean),
+        2048,
+        len(X_desc_train),
+        len(X_desc_val),
+        len(X_desc_test),
+        "XGBoost",
+        0.517222,
+        0.683086,
+        0.896091,
+        len(chain_df),
+        chain_df["SMILES"].nunique(),
+        round(
+            100 * chain_df["SMILES"].nunique() / len(chain_df),
+            2
+        ),
+        len(filtered_candidates)
+    ]
+})
+
+summary_path = os.path.join(
+    metrics_path,
+    "final_project_summary.csv"
+)
+
+project_summary.to_csv(
+    summary_path,
+    index=False
+)
+
+
+print("==============================================")
+print("PHASE 9A RESULTS SAVED SUCCESSFULLY")
+print("==============================================")
+
+print("\nSampling chain:")
+print(chain_path)
+
+print("\nTop-10 candidates:")
+print(top10_path)
+
+print("\nCandidate analysis:")
+print(analysis_path)
+
+print("\nProject summary:")
+print(summary_path)
+
+--- CELL 181 ---
+# ============================================================
+# PHASE 9B: CREATE STREAMLIT APPLICATION
+# ============================================================
+
+import os
+
+APP_PATH = os.path.join(
+    PROJECT_PATH,
+    "app"
+)
+
+os.makedirs(APP_PATH, exist_ok=True)
+
+streamlit_file = os.path.join(
+    APP_PATH,
+    "streamlit_app.py"
+)
+
+app_code = r'''
+import os
+import joblib
+import pandas as pd
+import streamlit as st
+
+from rdkit import Chem
+from rdkit.Chem import Descriptors, Crippen, Lipinski
+from rdkit.Chem import Draw
+
+
+# ============================================================
+# PROJECT PATH
+# ============================================================
+
+PROJECT_PATH = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
+
+# ============================================================
+# LOAD MODEL
+# ============================================================
+
+MODEL_PATH = os.path.join(
+    PROJECT_PATH,
+    "models",
+    "xgboost_solubility_model.pkl"
+)
+
+TOP10_PATH = os.path.join(
+    PROJECT_PATH,
+    "results",
+    "candidates",
+    "top_10_candidates.csv"
+)
+
+
+@st.cache_resource
+def load_model():
+
+    model = joblib.load(MODEL_PATH)
+
+    return model
+
+
+@st.cache_data
+def load_candidates():
+
+    if os.path.exists(TOP10_PATH):
+
+        return pd.read_csv(TOP10_PATH)
+
+    return pd.DataFrame()
+
+
+model = load_model()
+
+top_candidates = load_candidates()
+
+
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
+
+st.set_page_config(
+    page_title="AI Drug Candidate Discovery",
+    page_icon="🧬",
+    layout="wide"
+)
+
+
+# ============================================================
+# TITLE
+# ============================================================
+
+st.title(
+    "🧬 AI-Driven Drug Candidate Discovery"
+)
+
+st.markdown(
+    """
+    **Machine Learning + Molecular Descriptors + Gibbs-Style
+    Molecular Sampling**
+
+    This application predicts aqueous solubility (`logS`) and
+    displays computationally prioritized molecular candidates.
+    """
+)
+
+
+st.divider()
+
+
+# ============================================================
+# SMILES INPUT
+# ============================================================
+
+st.header("1. Molecular Solubility Prediction")
+
+smiles = st.text_input(
+    "Enter a SMILES string",
+    value="",
+    placeholder="Example: CCO"
+)
+
+
+predict_button = st.button(
+    "🔬 Predict Molecule",
+    type="primary"
+)
+
+
+# ============================================================
+# MOLECULAR ANALYSIS
+# ============================================================
+
+if predict_button:
+
+    if not smiles.strip():
+
+        st.warning(
+            "Please enter a SMILES string."
+        )
+
+    else:
+
+        mol = Chem.MolFromSmiles(
+            smiles
+        )
+
+        if mol is None:
+
+            st.error(
+                "Invalid SMILES. Please enter a valid molecular structure."
+            )
+
+        else:
+
+            # ------------------------------------------------
+            # Canonical SMILES
+            # ------------------------------------------------
+
+            canonical_smiles = Chem.MolToSmiles(
+                mol,
+                canonical=True
+            )
+
+            # ------------------------------------------------
+            # Molecular descriptors
+            # ------------------------------------------------
+
+            descriptors = {
+
+                "MolecularWeight":
+                    Descriptors.MolWt(mol),
+
+                "LogP":
+                    Crippen.MolLogP(mol),
+
+                "TPSA":
+                    Descriptors.TPSA(mol),
+
+                "HBD":
+                    Lipinski.NumHDonors(mol),
+
+                "HBA":
+                    Lipinski.NumHAcceptors(mol),
+
+                "RotatableBonds":
+                    Lipinski.NumRotatableBonds(mol),
+
+                "RingCount":
+                    Lipinski.RingCount(mol)
+            }
+
+            # ------------------------------------------------
+            # Prediction
+            # ------------------------------------------------
+
+            X = pd.DataFrame(
+                [descriptors]
+            )
+
+            predicted_logS = float(
+                model.predict(X)[0]
+            )
+
+            # ------------------------------------------------
+            # Lipinski violations
+            # ------------------------------------------------
+
+            violations = 0
+
+            if descriptors["MolecularWeight"] > 500:
+                violations += 1
+
+            if descriptors["LogP"] > 5:
+                violations += 1
+
+            if descriptors["HBD"] > 5:
+                violations += 1
+
+            if descriptors["HBA"] > 10:
+                violations += 1
+
+            candidate_score = (
+                predicted_logS -
+                2.0 * violations
+            )
+
+            # =================================================
+            # DISPLAY RESULTS
+            # =================================================
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.subheader(
+                    "Molecule Structure"
+                )
+
+                image = Draw.MolToImage(
+                    mol,
+                    size=(400, 400)
+                )
+
+                st.image(
+                    image
+                )
+
+            with col2:
+
+                st.subheader(
+                    "Prediction"
+                )
+
+                st.metric(
+                    "Predicted logS",
+                    f"{predicted_logS:.4f}"
+                )
+
+                st.metric(
+                    "Candidate Score",
+                    f"{candidate_score:.4f}"
+                )
+
+                st.metric(
+                    "Lipinski Violations",
+                    violations
+                )
+
+
+            # =================================================
+            # DESCRIPTOR TABLE
+            # =================================================
+
+            st.subheader(
+                "Molecular Descriptors"
+            )
+
+            descriptor_display = pd.DataFrame(
+                {
+                    "Property": list(
+                        descriptors.keys()
+                    ),
+                    "Value": list(
+                        descriptors.values()
+                    )
+                }
+            )
+
+            st.dataframe(
+                descriptor_display,
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+            # =================================================
+            # CANONICAL SMILES
+            # =================================================
+
+            st.subheader(
+                "Canonical SMILES"
+            )
+
+            st.code(
+                canonical_smiles
+            )
+
+
+st.divider()
+
+
+# ============================================================
+# TOP 10 CANDIDATES
+# ============================================================
+
+st.header(
+    "2. Top Computationally Prioritized Candidates"
+)
+
+st.caption(
+    "These candidates were generated by the Gibbs-style "
+    "molecular sampling experiment and ranked using the "
+    "project's computational scoring strategy."
+)
+
+
+if not top_candidates.empty:
+
+    display_columns = [
+        "Rank",
+        "Predicted_logS",
+        "Total_Excess",
+        "Final_Ranking_Score",
+        "MolecularWeight",
+        "LogP",
+        "TPSA",
+        "HBD",
+        "HBA",
+        "RotatableBonds",
+        "RingCount"
+    ]
+
+    available_columns = [
+        col
+        for col in display_columns
+        if col in top_candidates.columns
+    ]
+
+    st.dataframe(
+        top_candidates[
+            available_columns
+        ],
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+
+    st.info(
+        "Top candidate results are not available."
+    )
+
+
+# ============================================================
+# DISCLAIMER
+# ============================================================
+
+st.divider()
+
+st.caption(
+    """
+    ⚠️ This is a computational research prototype.
+    Predictions and candidate rankings do not establish
+    biological activity, safety, efficacy, or clinical suitability.
+    Experimental validation and additional ADMET/binding studies
+    would be required.
+    """
+)
+'''
+
+with open(
+    streamlit_file,
+    "w",
+    encoding="utf-8"
+) as f:
+
+    f.write(app_code)
+
+
+print("==============================================")
+print("STREAMLIT APP CREATED")
+print("==============================================")
+print(streamlit_file)

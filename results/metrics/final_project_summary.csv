@@ -1,0 +1,14 @@
+Metric,Value
+Dataset molecules after cleaning,1117
+Molecular fingerprint size,2048
+Training samples,781
+Validation samples,168
+Test samples,168
+Best model,XGBoost
+XGBoost Test MAE,0.517222
+XGBoost Test RMSE,0.683086
+XGBoost Test R2,0.896091
+Gibbs-style sampling iterations,100
+Unique sampled molecules,99
+Unique molecule percentage,99.0
+Lipinski-compliant sampled molecules,0
